@@ -1,7 +1,7 @@
 function Project_cmh6674_ars9525(fn_in)
 
   if nargin < 1 % if no input file loop through directory
-      file_list = dir('*.jpg'); 
+      file_list = dir('*.jpeg'); 
        for counter = 1 : length( file_list )
            fn = file_list(counter);
            find_cards(fn.name);
@@ -71,12 +71,57 @@ function get_each_card(im, rgb_im)
 
     if size(im_card,1) > 300 && size(im_card,2) > 300 && is_card_size
       color = card_color(im_card_rgb);
+      shape = card_shape(color, im_card_rgb);
       % plot rectangle around card
       hold on;
       plot(xs([ 1 1 2 2 1]), ys([1 2 2 1 1 ]), color, 'LineWidth', 4 );
+      text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 10, 'Interpreter', 'none');
     end
   end
   hold off;
+end
+
+function shape=card_shape(color, im)
+  % Loop through all images in db folder and use normxcorr2 to find the most similar card
+  shape = 'unknown';
+
+  % get all images in db folder of matching color
+  db_folder = 'db/*.png';
+  switch color
+    case 'r-'
+      db_folder = 'db/red/*.png';
+    case 'b-'
+      db_folder = 'db/blue/*.png';
+    case 'g-'
+      db_folder = 'db/green/*.png';
+  end
+  file_list = dir(db_folder);
+  
+  current_best = intmin;
+
+  % loop through all images in db folder
+  for counter = 1 : length( file_list )
+    fn = file_list(counter);
+    fullpath = fullfile(fn.folder, fn.name);
+    im_db = im2double(imread(fullpath));
+
+    % resize im_db to be the same size as im
+    % TODO Change this resize so it maintaing aspect ratio
+    im_db = imresize(im_db, [round(size(im,1) * 0.99), round(size(im,2) * 0.99)]);
+
+    corr = normxcorr2(im2gray(im_db), im2gray(im));
+    sm = max(corr(:));
+
+    if sm > current_best
+      current_best = sm;
+      shape = fn.name;
+    end
+    %[max_corr, imax] = max(abs(corr(:)));
+    % if max_corr > 0.9
+    %   shape = fn.name;
+    %   break;
+    % end
+  end
 end
 
 
