@@ -47,17 +47,17 @@ function get_each_card(im, rgb_im)
   [L, num] = bwlabel(im);
 
   %get each card
-  for i = 1:num
+  for num = 1:num
     %get each card
-    [r,c] = find(L==i);
+    [r,c] = find(L==num);
+    rc = [r,c];
     
     % surround each card with a bounding box
     min_r = min(r);
     max_r = max(r);
     min_c = min(c);
     max_c = max(c);
-    im_card = im(min_r : max_r, min_c : max_c);
-    im_card_rgb = rgb_im(min_r : max_r, min_c : max_c, :);
+   
 
     xs = [min_c, max_c];
     ys = [min_r, max_r];
@@ -69,7 +69,102 @@ function get_each_card(im, rgb_im)
 
     is_card_size = length / size(im,1) < 0.2 || height / size(im,2) < 0.2;
 
-    if size(im_card,1) > 300 && size(im_card,2) > 300 && is_card_size
+    if length > 300 && height > 300 && is_card_size
+         im_card = im(min_r-5 : max_r+5, min_c-5 : max_c+5);
+         im_card_rgb = rgb_im(min_r-5 : max_r+5, min_c-5 : max_c+5, :);
+
+      im_rectangle = imfill(im_card, 'holes');
+      BW = edge(im_rectangle,'canny');
+ 
+      [H,theta,rho] = hough(BW);
+      P = houghpeaks(H,4,'threshold',ceil(0.2*max(H(:))));
+ 
+      lines = houghlines(BW,theta,rho,P,'FillGap',50,'MinLength',75);
+        
+      figure();
+      imagesc(im_card_rgb);
+      colormap(gray);
+      hold on;
+      p_lines = [0,0;
+                 0,0;
+                 0,0;
+                 0,0];
+
+      % for 4 hough lines get their line equations
+      for num = 1:4
+        xy = [lines(num).point1; lines(num).point2];
+
+        % account for verticall lines
+        if xy(1) == xy(2)
+            xy(1) = xy(1) + 1;
+        end
+        
+        % get equation of the line
+        p = polyfit(xy(:,1), xy(:,2), 1);
+        p_lines(num, :) = p;
+
+        % x1 = linspace(1, length);
+        % y1 = polyval(p, x1);
+        % plot(x1,y1,'LineWidth',2,'Color','red')
+
+      end
+
+      % sort into horizontal and vertical edges
+      horizontal_lines = p_lines(abs(p_lines(:,1)) < 1, : );
+      vertical_lines = p_lines(abs(p_lines(:,1)) >= 1, : );
+
+      [y_lim, x_lim] = size(im_rectangle);
+
+      if size(horizontal_lines, 1) == 2 && size(vertical_lines, 1) == 2
+        
+        corners = zeros(4,2);
+        for v = 1:2
+          for h = 1:2
+              vert = vertical_lines(v, :);
+              horz = horizontal_lines(h, :);
+              
+              [x_val, y_val] = point_intersect(vert,horz);
+
+              if x_val < 1
+                  x_val = 1;
+              end
+              if x_val > x_lim
+                  x_val = x_lim -1;
+              end
+              if y_val < 1
+                  y_val = 1;
+              end
+              if y_val > y_lim
+                  y_val = y_lim-1;
+              end
+              if x_val < x_lim / 2 && y_val < y_lim / 2
+                plot(x_val, y_val, '.', "Color","red", "MarkerSize",20);
+                corners(1, :) = [x_val, y_val];
+              elseif x_val > x_lim / 2 && y_val < y_lim / 2
+                plot(x_val, y_val, '.', "Color","yellow", "MarkerSize",20);
+                corners(2, :) = [x_val, y_val];
+              elseif x_val < x_lim / 2 && y_val > y_lim / 2
+                plot(x_val, y_val, '.', "Color","cyan", "MarkerSize",20);
+                corners(3, :) = [x_val, y_val];
+              else
+                plot(x_val, y_val, '.', "Color","green", "MarkerSize",20);
+                corners(4, :) = [x_val, y_val];
+              end
+          end
+        end
+
+        % do affine tranformation 
+        % new_points = [0, y_lim; 0, 0;, x_lim, y_lim; x_lim, 0];
+        new_points = [1,1; x_lim, 1; 1, y_lim; x_lim, y_lim];
+        tform = fitgeotrans(corners, new_points, 'affine');
+        new_im = imwarp(im_card_rgb, tform, 'OutputView',imref2d(size(im_card_rgb)));
+        new_im = imrotate(new_im,90);
+        figure();
+        imagesc(new_im);
+
+
+      end
+    
       color = card_color(im_card_rgb);
       shape = card_shape(color, im_card_rgb);
       % plot rectangle around card
@@ -79,6 +174,12 @@ function get_each_card(im, rgb_im)
     end
   end
   hold off;
+end
+
+function [x0, y0] = point_intersect(p1, p2)
+    x0 = (p2(2) - p1(2) )/(p1(1) - p2(1));
+    y0 = p1(1)*x0 + p1(2);
+
 end
 
 function shape=card_shape(color, im)
