@@ -103,9 +103,9 @@ function get_each_card(im, rgb_im)
         p = polyfit(xy(:,1), xy(:,2), 1);
         p_lines(num, :) = p;
 
-        x1 = linspace(1, length);
-        y1 = polyval(p, x1);
-        plot(x1,y1,'LineWidth',2,'Color','red')
+        %x1 = linspace(1, length);
+        %y1 = polyval(p, x1);
+        %plot(x1,y1,'LineWidth',2,'Color','red')
 
       end
 
