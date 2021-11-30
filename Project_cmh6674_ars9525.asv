@@ -82,7 +82,7 @@ function get_each_card(im, rgb_im)
       lines = houghlines(BW,theta,rho,P,'FillGap',50,'MinLength',75);
         
       %figure();
-      %imagesc(im_card_rgb);
+      imagesc(im_card_rgb);
       %colormap(gray);
       %hold on;
       p_lines = [0,0;
@@ -105,7 +105,7 @@ function get_each_card(im, rgb_im)
 
         % x1 = linspace(1, length);
         % y1 = polyval(p, x1);
-        % plot(x1,y1,'LineWidth',2,'Color','red')
+        plot(x1,y1,'LineWidth',2,'Color','red')
 
       end
 
@@ -161,8 +161,8 @@ function get_each_card(im, rgb_im)
         tform = fitgeotrans(corners, new_points, 'affine');
         new_im = imwarp(im_card_rgb, tform, 'OutputView',imref2d(size(im_card_rgb)));
         new_im = imrotate(new_im,90);
-%         figure();
-%         imagesc(new_im);
+        figure();
+        imagesc(new_im);
 
 
       end
@@ -172,7 +172,7 @@ function get_each_card(im, rgb_im)
       % plot rectangle around card
       hold on;
       plot(xs([ 1 1 2 2 1]), ys([1 2 2 1 1 ]), color, 'LineWidth', 4 );
-      text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', '');
+      text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', 'Black');
     end
   end
   hold off;
