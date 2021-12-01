@@ -46,6 +46,8 @@ function get_each_card(im, rgb_im)
   % use bwlabel to get regions of the image
   [L, N] = bwlabel(im);
 
+  card_count = 0;
+
   %get each card
   for region = 1:N
     %get each card
@@ -67,9 +69,12 @@ function get_each_card(im, rgb_im)
 
     is_card_size = length / size(im,1) < 0.3 && height / size(im,2) < 0.3;
 
+
     if length > 300 && height > 300 && is_card_size
-         im_card = im(min_r-5 : max_r+5, min_c-5 : max_c+5);
-         im_card_rgb = rgb_im(min_r-5 : max_r+5, min_c-5 : max_c+5, :);
+      
+      card_count = card_count + 1;
+      im_card = im(min_r-5 : max_r+5, min_c-5 : max_c+5);
+      im_card_rgb = rgb_im(min_r-5 : max_r+5, min_c-5 : max_c+5, :);
 
       % get just the card without the shapes
       im_rectangle = imfill(im_card, 'holes');
@@ -172,14 +177,18 @@ function get_each_card(im, rgb_im)
       end
     
       color = card_color(im_card_rgb);
-      shape = card_shape(color, new_im);
+      %shape = card_shape(color, new_im);
+      %shape = erase(shape, '.jpg');
       % plot rectangle around card
       hold on;
       plot(xs([ 1 1 2 2 1]), ys([1 2 2 1 1 ]), color, 'LineWidth', 4 );
-      text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', 'Black');
+      %text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', 'Black');
+      %disp(shape);
     end
   end
   hold off;
+  total = ['number of cards =', num2str(card_count)];
+  disp(total);
 end
 
 function [x0, y0] = point_intersect(p1, p2)
