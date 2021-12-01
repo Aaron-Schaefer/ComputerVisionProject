@@ -47,9 +47,9 @@ function get_each_card(im, rgb_im)
   [L, N] = bwlabel(im);
 
   %get each card
-  for num = 1:N
+  for region = 1:N
     %get each card
-    [r,c] = find(L==num);
+    [r,c] = find(L==region);
     rc = [r,c];
     
     % surround each card with a bounding box
@@ -65,26 +65,27 @@ function get_each_card(im, rgb_im)
     length = max_c - min_c;
     height = max_r - min_r;
 
-
-
-    is_card_size = length / size(im,1) < 0.2 && height / size(im,2) < 0.2;
+    is_card_size = length / size(im,1) < 0.3 && height / size(im,2) < 0.3;
 
     if length > 300 && height > 300 && is_card_size
          im_card = im(min_r-5 : max_r+5, min_c-5 : max_c+5);
          im_card_rgb = rgb_im(min_r-5 : max_r+5, min_c-5 : max_c+5, :);
 
+      % get just the card without the shapes
       im_rectangle = imfill(im_card, 'holes');
+
+      % hough line detection
       BW = edge(im_rectangle,'canny');
- 
       [H,theta,rho] = hough(BW);
       P = houghpeaks(H,4,'threshold',ceil(0.2*max(H(:))));
- 
       lines = houghlines(BW,theta,rho,P,'FillGap',50,'MinLength',75);
         
       %figure();
       %imagesc(im_card_rgb);
       %colormap(gray);
       %hold on;
+
+      % holds equation of lines 
       p_lines = [0,0;
                  0,0;
                  0,0;
@@ -94,7 +95,7 @@ function get_each_card(im, rgb_im)
       for num = 1:4
         xy = [lines(num).point1; lines(num).point2];
 
-        % account for verticall lines
+        % account for vertical lines
         if xy(1) == xy(2)
             xy(1) = xy(1) + 1;
         end
@@ -115,6 +116,8 @@ function get_each_card(im, rgb_im)
 
       [y_lim, x_lim] = size(im_rectangle);
 
+      % do calculations only if two horizontal edges and two vertical are
+      % found
       if size(horizontal_lines, 1) == 2 && size(vertical_lines, 1) == 2
         
         corners = zeros(4,2);
@@ -125,6 +128,7 @@ function get_each_card(im, rgb_im)
               
               [x_val, y_val] = point_intersect(vert,horz);
 
+              % limit cordinate to edges of image
               if x_val < 1
                   x_val = 1;
               end
@@ -137,17 +141,20 @@ function get_each_card(im, rgb_im)
               if y_val > y_lim
                   y_val = y_lim-1;
               end
-              if x_val < x_lim / 2 && y_val < y_lim / 2
-                %plot(x_val, y_val, '.', "Color","red", "MarkerSize",20);
+
+              % corners matrix goes [top-right, top-left, bottom-right,
+              % bottom-left]
+              if x_val < x_lim / 2 && y_val < y_lim / 2 % top-right
+                % plot(x_val, y_val, '.', "Color","red", "MarkerSize",20);
                 corners(1, :) = [x_val, y_val];
-              elseif x_val > x_lim / 2 && y_val < y_lim / 2
-                %plot(x_val, y_val, '.', "Color","yellow", "MarkerSize",20);
+              elseif x_val > x_lim / 2 && y_val < y_lim / 2 % top left
+                % plot(x_val, y_val, '.', "Color","yellow", "MarkerSize",20);
                 corners(2, :) = [x_val, y_val];
-              elseif x_val < x_lim / 2 && y_val > y_lim / 2
-                %plot(x_val, y_val, '.', "Color","cyan", "MarkerSize",20);
+              elseif x_val < x_lim / 2 && y_val > y_lim / 2 % bottom right
+                % plot(x_val, y_val, '.', "Color","cyan", "MarkerSize",20);
                 corners(3, :) = [x_val, y_val];
-              else
-                %plot(x_val, y_val, '.', "Color","green", "MarkerSize",20);
+              else % bottom left
+                % plot(x_val, y_val, '.', "Color","green", "MarkerSize",20);
                 corners(4, :) = [x_val, y_val];
               end
           end
@@ -176,6 +183,7 @@ function get_each_card(im, rgb_im)
 end
 
 function [x0, y0] = point_intersect(p1, p2)
+    % get point of intersection between two lines
     x0 = (p2(2) - p1(2) )/(p1(1) - p2(1));
     y0 = p1(1)*x0 + p1(2);
 
