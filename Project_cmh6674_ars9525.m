@@ -177,13 +177,13 @@ function get_each_card(im, rgb_im)
       end
     
       color = card_color(im_card_rgb);
-      %shape = card_shape(color, new_im);
-      %shape = erase(shape, '.jpg');
+      shape = card_shape(color, new_im);
+      shape = erase(shape, '.jpg');
       % plot rectangle around card
       hold on;
       plot(xs([ 1 1 2 2 1]), ys([1 2 2 1 1 ]), color, 'LineWidth', 4 );
-      %text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', 'Black');
-      %disp(shape);
+      text(xs(1), ys(1), sprintf('%s %s', color, shape), 'Color', 'white', 'FontSize', 6, 'Interpreter', 'none', 'BackgroundColor', 'Black');
+      disp(shape);
     end
   end
   hold off;
